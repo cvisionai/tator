@@ -63,6 +63,15 @@ class PprintRenderer(BaseRenderer):
 class TatorRenderer(JSONRenderer):
     encoder_class = TatorJSONEncoder
 
+class TatorJSONLRenderer(JSONRenderer):
+    media_type = "application/jsonl"
+    format = "jsonl"
+
+    def render(self, data, media_type=None, renderer_context=None):
+        """Renders a list of objects to JSON Lines format."""
+        if isinstance(data, list):
+            return "\n".join(ujson.dumps(item, default=str) for item in data) + "\n"
+        return ujson.dumps(data, default=str)
 
 class JpegRenderer(BaseRenderer):
     media_type = "image/jpeg"

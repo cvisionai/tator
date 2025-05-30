@@ -33,12 +33,61 @@ from .util import update_queryset_archive_state, memberships_to_rowp, affiliatio
 from ._permission_util import PermissionMask, shift_permission
 
 from django.db import transaction
+from django.http import StreamingHttpResponse
+import gzip
 
 logger = logging.getLogger(__name__)
 
 TEST_IMAGE = (
     "https://www.cvisionai.com/static/b91b90512c92c96884afd035c2d9c81a/f2464/tator-cloud.png"
 )
+
+
+def decompress_gzip(compressed_data):
+    """
+    Decompress gzipped data.
+    Args:
+        compressed_data (bytes): The gzipped data.
+    Returns:
+        bytes: The decompressed data.
+    """
+    with gzip.GzipFile(fileobj=io.BytesIO(compressed_data), mode="rb") as f:
+        return f.read()
+
+
+def collect_streaming_content(response: StreamingHttpResponse, decode_json=True):
+    """
+    Utility function to collect content from a StreamingHttpResponse.
+
+    Args:
+        response (StreamingHttpResponse): The streaming response to collect data from.
+        decode_json (bool): Whether to decode the content as JSON. Defaults to False.
+
+    Returns:
+        str or dict: The collected content, either as a string or a parsed JSON object.
+    """
+    if not isinstance(response, StreamingHttpResponse):
+        # Do nothing for non-streaming responses
+        return response
+
+    content_encoding = response.get("Content-Encoding", "").lower()
+
+    # Collect all chunks of the streamed content
+    response_data = b""
+    for chunk in response.streaming_content:
+        response_data += chunk
+
+    try:
+        if content_encoding == "gzip":
+            # If the content is gzipped, decompress it
+            response_data = decompress_gzip(response_data)
+        # If it's JSON and we need to decode it, parse the JSON
+        response.data = json.loads(response_data.decode())
+    except json.JSONDecodeError:
+        print("Failed to decode JSON from response data.")
+        print(f"SAMPLE={response_data[:100]}...")  # Print first 100 bytes for debugging
+
+    return response
 
 
 class TatorTransactionTest(APITransactionTestCase):
@@ -66,7 +115,8 @@ def wait_for_indices(entity_type):
 
 def assertResponse(self, response, expected_code):
     if response.status_code != expected_code:
-        print(response.data)
+        if hasattr(response, "data"):
+            print(response.data)
     self.assertEqual(response.status_code, expected_code)
 
 
@@ -484,6 +534,7 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
+        resp = collect_streaming_content(resp)
         values = [x["attributes"].get("Float Test") for x in resp.data]
 
         # Rename float test to something else the back again
@@ -500,6 +551,7 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
+        resp = collect_streaming_content(resp)
         new_values = [x["attributes"].get("Float Test Renamed") for x in resp.data]
         for idx, val in enumerate(values):
             self.assertEqual(val, new_values[idx])
@@ -522,6 +574,7 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
+        resp = collect_streaming_content(resp)
         new_values = [x["attributes"].get("Float Test") for x in resp.data]
         for idx, val in enumerate(values):
             self.assertEqual(val, new_values[idx])
@@ -545,6 +598,7 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
+        resp = collect_streaming_content(resp)
 
         # Check 2; attribute has no default set but it is registered
         new_values = [x["attributes"].get("Float Test") for x in resp.data]
@@ -568,7 +622,7 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
-
+        resp = collect_streaming_content(resp)
         # Check 3; attributes are not effected by renaming a non-existant attribute
         new_values = [x["attributes"].get("Float Test") for x in resp.data]
         for idx, val in enumerate(values):
@@ -590,7 +644,7 @@ class AttributeRenameMixin:
         resp = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}"
         )
-
+        resp = collect_streaming_content(resp)
         # Check 3; attributes are not effected by renaming a non-existant attribute
         new_values = [x["attributes"].get("Float Test") for x in resp.data]
         for idx, val in enumerate(values):
@@ -637,10 +691,12 @@ class ElementalIDChangeMixin:
         response = self.client.get(
             list_endpoint, {"elemental_id": elemental_id, "show_all_marks": 1}, format="json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), len(self.entities))
 
         response = self.client.get(list_endpoint, format="json")
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
         existing_count = len(response.data)
         new_elemental_id = uuid4()
@@ -652,11 +708,12 @@ class ElementalIDChangeMixin:
         response = self.client.get(
             list_endpoint, {"elemental_id": new_elemental_id, "show_all_marks": 1}, format="json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), existing_count)
 
         for obj in response.data:
-            self.assertEqual(obj["elemental_id"], new_elemental_id)
+            self.assertEqual(obj["elemental_id"], str(new_elemental_id))
 
 
 class EntityAuthorChangeMixin:
@@ -1425,6 +1482,7 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), len(self.entities))
         this_ids = [e.pk for e in self.entities]
         rest_ids = [e["id"] for e in response.data]
@@ -1439,7 +1497,7 @@ class AttributeTestMixin:
         assertResponse(self, response, status.HTTP_200_OK)
 
     def test_pagination(self):
-        test_vals = [random.random() > 0.5 for _ in range(len(self.entities))]
+        test_vals = [i % 2 == 0 for i in range(len(self.entities))]
         for idx, test_val in enumerate(test_vals):
             pk = self.entities[idx].pk
             response = self.client.patch(
@@ -1449,6 +1507,21 @@ class AttributeTestMixin:
             )
             assertResponse(self, response, status.HTTP_200_OK)
 
+        # Fetch all of them
+        response = self.client.get(
+            f"/rest/{self.list_uri}/{self.project.pk}"
+            f"?format=json"
+            f"&attribute=Bool Test::true"
+            f"&type={self.entity_type.pk}"
+        )
+        response = collect_streaming_content(response)
+        assertResponse(self, response, status.HTTP_200_OK)
+        max_length = len(response.data)
+        for idx, test_val in enumerate(response.data):
+            self.assertEqual(response.data[idx]["attributes"]["Bool Test"], True)
+
+        all_ids = [entity["id"] for entity in response.data]
+        print(f"ALL_IDS={all_ids}")
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}"
             f"?format=json"
@@ -1457,8 +1530,9 @@ class AttributeTestMixin:
             f"&start=0"
             f"&stop=2"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), max(0, min(sum(test_vals), 2)))
+        self.assertEqual(len(response.data), min(2, max_length))
         response1 = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}"
             f"?format=json"
@@ -1467,10 +1541,15 @@ class AttributeTestMixin:
             f"&start=1"
             f"&stop=4"
         )
+        response1 = collect_streaming_content(response1)
+        ids = [e["id"] for e in response.data]
+        ids1 = [e["id"] for e in response1.data]
         self.assertEqual(response1.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response1.data), max(0, min(sum(test_vals) - 1, 3)))
-        if len(response.data) >= 2 and len(response1.data) >= 1:
-            self.assertEqual(response.data[1], response1.data[0])
+        self.assertEqual(len(response1.data), min(3,max_length))
+        
+        self.assertEqual(response1.data[0]["id"], all_ids[1])
+        self.assertEqual(response1.data[1]["id"], all_ids[2])
+        self.assertEqual(response1.data[2]["id"], all_ids[3])
 
     def test_sorting(self):
         response = self.client.get(
@@ -1478,6 +1557,7 @@ class AttributeTestMixin:
             f"?format=json"
             f"&type={self.entity_type.pk}"
         )
+        response = collect_streaming_content(response)
         last_id = response.data[0]["id"]
         for r in response.data[1:]:
             assert r["id"] > last_id
@@ -1490,6 +1570,7 @@ class AttributeTestMixin:
             f"&type={self.entity_type.pk}"
             f"&sort_by=-$id"
         )
+        response = collect_streaming_content(response)
         last_id = response.data[0]["id"]
         for r in response.data[1:]:
             assert r["id"] < last_id
@@ -1502,6 +1583,7 @@ class AttributeTestMixin:
             f"&type={self.entity_type.pk}"
             f"&sort_by=Float Test"
         )
+        response = collect_streaming_content(response)
 
         last_val = response.data[0]["attributes"]["Float Test"]
         for r in response.data[1:]:
@@ -1515,6 +1597,7 @@ class AttributeTestMixin:
             f"&type={self.entity_type.pk}"
             f"&sort_by=-Float Test"
         )
+        response = collect_streaming_content(response)
         last_val = response.data[0]["attributes"]["Float Test"]
         for r in response.data[1:]:
             assert r["attributes"]["Float Test"] <= last_val
@@ -1583,12 +1666,14 @@ class AttributeTestMixin:
             f"&type={self.entity_type.pk}",  # needed for localizations
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), len(self.entities))
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_null=Bool Test::true"
             f"&type={self.entity_type.pk}",  # needed for localizations
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         # Nullify all the Bool Tests
@@ -1615,6 +1700,7 @@ class AttributeTestMixin:
             f"&type={self.entity_type.pk}",  # needed for localizations
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), len(self.entities))
 
         response = self.client.get(
@@ -1622,12 +1708,14 @@ class AttributeTestMixin:
             f"&type={self.entity_type.pk}",  # needed for localizations
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), len(self.entities))
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_null=asdf::false"
             f"&type={self.entity_type.pk}",  # needed for localizations
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
     def generic_attr_helper(self, idx, name, test_val):
@@ -1794,11 +1882,13 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute=Bool Test::true&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), sum(test_vals))
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute=Bool Test::false&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
         self.assertEqual(len(response.data), len(test_vals) - sum(test_vals))
         response = self.client.get(
@@ -1855,12 +1945,14 @@ class AttributeTestMixin:
             response = self.client.get(
                 f"/rest/{self.list_uri}/{self.project.pk}?attribute=Int Test::{test_val}&type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(len(response.data), sum([t == test_val for t in test_vals]))
         for lbound, ubound in [(-1000, 1000), (-500, 500), (-500, 0), (0, 500)]:
             response = self.client.get(
                 f"/rest/{self.list_uri}/{self.project.pk}?attribute_gt=Int Test::{lbound}&attribute_lt=Int Test::{ubound}&type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([(t > lbound) and (t < ubound) for t in test_vals])
@@ -1868,6 +1960,7 @@ class AttributeTestMixin:
             response = self.client.get(
                 f"/rest/{self.list_uri}/{self.project.pk}?attribute_gte=Int Test::{lbound}&attribute_lte=Int Test::{ubound}&type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([(t >= lbound) and (t <= ubound) for t in test_vals])
@@ -1875,10 +1968,12 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Int Test::1&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Int Test::false&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
         self.generic_reset_nullification("Int Test", 42)
@@ -1914,11 +2009,13 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute=Float Test::{test_val}&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
         for lbound, ubound in [(-1000.0, 1000.0), (-500.0, 500.0), (-500.0, 0.0), (0.0, 500.0)]:
             response = self.client.get(
                 f"/rest/{self.list_uri}/{self.project.pk}?attribute_gt=Float Test::{lbound}&attribute_lt=Float Test::{ubound}&type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([(t > lbound) and (t < ubound) for t in test_vals])
@@ -1926,6 +2023,7 @@ class AttributeTestMixin:
             response = self.client.get(
                 f"/rest/{self.list_uri}/{self.project.pk}?attribute_gte=Float Test::{lbound}&attribute_lte=Float Test::{ubound}&type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([(t >= lbound) and (t <= ubound) for t in test_vals])
@@ -1934,10 +2032,12 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Float Test::false&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Float Test::false&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
         self.generic_reset_nullification("Float Test", 42.0)
@@ -1960,24 +2060,29 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_gt=Enum Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_gte=Enum Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_lt=Enum Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_lte=Enum Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for _ in range(10):
             subs = "".join(random.choices(string.ascii_lowercase, k=2))
             response = self.client.get(
                 f"/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Enum Test::{subs}&type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([subs.lower() in t.lower() for t in test_vals])
@@ -1985,6 +2090,7 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_distance=Enum Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
         self.generic_reset_nullification("Enum Test", "enum_val1")
@@ -2000,24 +2106,29 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_gt=String Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_gte=String Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_lt=String Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_lte=String Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         for _ in range(10):
             subs = "".join(random.choices(string.ascii_lowercase, k=2))
             response = self.client.get(
                 f"/rest/{self.list_uri}/{self.project.pk}?attribute_contains=String Test::{subs}&type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([subs.lower() in t.lower() for t in test_vals])
@@ -2025,6 +2136,7 @@ class AttributeTestMixin:
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_distance=String Test::0&type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
 
         self.generic_reset_nullification("String Test", "asdf_default")
@@ -2050,6 +2162,7 @@ class AttributeTestMixin:
             f"/rest/{self.list_uri}/{self.project.pk}?attribute=Datetime Test::{to_string(test_val)}&"
             f"type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_200_OK)
         delta_dt = datetime.timedelta(days=365)
         for lbound, ubound in [
@@ -2065,6 +2178,7 @@ class AttributeTestMixin:
                 f"attribute_lt=Datetime Test::{ubound_iso}&type={self.entity_type.pk}&"
                 f"format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([(t > lbound) and (t < ubound) for t in test_vals])
@@ -2074,6 +2188,7 @@ class AttributeTestMixin:
                 f"attribute_lte=Datetime Test::{ubound_iso}&type={self.entity_type.pk}&"
                 f"format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             self.assertEqual(
                 len(response.data), sum([(t >= lbound) and (t <= ubound) for t in test_vals])
@@ -2120,6 +2235,7 @@ class AttributeTestMixin:
             f"/rest/{self.list_uri}/{self.project.pk}?attribute=Geoposition Test::10::{lat}::{lon}&"
             f"type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_lt=Geoposition Test::10::{lat}::{lon}&"
@@ -2130,21 +2246,25 @@ class AttributeTestMixin:
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_lte=Geoposition Test::10::{lat}::{lon}&"
             f"type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_gt=Geoposition Test::10::{lat}::{lon}&"
             f"type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_gte=Geoposition Test::10::{lat}::{lon}&"
             f"type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         response = self.client.get(
             f"/rest/{self.list_uri}/{self.project.pk}?attribute_contains=Geoposition Test::10::{lat}::{lon}&"
             f"type={self.entity_type.pk}&format=json"
         )
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_400_BAD_REQUEST)
         test_lat, test_lon = (30.26759, -97.74299)  # Austin, TX
         for dist in [1.0, 100.0, 1000.0, 5000.0, 10000.0, 43000.0]:
@@ -2153,6 +2273,7 @@ class AttributeTestMixin:
                 f"{dist}::{test_lat}::{test_lon}&"
                 f"type={self.entity_type.pk}&format=json"
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             got = response.data
             self.assertEqual(
@@ -2179,6 +2300,7 @@ class AttributeTestMixin:
                 format="json",
             )
             assertResponse(self, response, status.HTTP_200_OK)
+            response = collect_streaming_content(response)
             got = response.data
             self.assertEqual(
                 len(response.data),
@@ -2378,11 +2500,11 @@ class ProjectDeleteTestCase(TatorTransactionTest):
         )
         self.videos = [
             create_test_video(self.user, f"asdf{idx}", self.video_type, self.project)
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.boxes = [
             create_test_box(self.user, self.box_type, self.project, random.choice(self.videos), 0)
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.states = [
             State.objects.create(
@@ -2390,7 +2512,7 @@ class ProjectDeleteTestCase(TatorTransactionTest):
                 project=self.project,
                 version=self.project.version_set.all()[0],
             )
-            for _ in range(random.randint(6, 10))
+            for _ in range(10)
         ]
         for state in self.states:
             for media in random.choices(self.videos):
@@ -2436,7 +2558,7 @@ class AlgorithmTestCase(TatorTransactionTest, PermissionListMembershipTestMixin)
         self.list_uri = "Algorithms"
         self.entities = [
             create_test_algorithm(self.user, f"result{idx}", self.project)
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         memberships_to_rowp(self.project.pk, force=False, verbose=False)
 
@@ -2572,7 +2694,7 @@ class VideoTestCase(
                 self.project,
                 attributes={"Float Test": random.random() * 1000},
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.media_entities = self.entities
         self.list_uri = "Medias"
@@ -2606,6 +2728,7 @@ class VideoTestCase(
         wait_for_indices(box_type)
 
         response = self.client.get(f"/rest/Medias/{self.project.pk}", format="json")
+        response = collect_streaming_content(response)
         assert response.data[0].get("incident", None) == None
 
         # Make a whole bunch of boxes to make sure indices get utilized
@@ -2738,6 +2861,7 @@ class VideoTestCase(
         response = self.client.put(
             f"/rest/Localizations/{self.project.pk}", {"frame_state_ids": [state.id]}, format="json"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["attributes"]["String Test"], "Zoo")
         self.assertEqual(response.data[0]["attributes"]["Enum Test"], "enum_val4")
@@ -2753,6 +2877,7 @@ class VideoTestCase(
             },
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["attributes"]["String Test"], "Zoo")
         self.assertEqual(response.data[0]["attributes"]["Enum Test"], "enum_val4")
@@ -2762,6 +2887,7 @@ class VideoTestCase(
             {"frame_state_ids": [state_2.id]},
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         response = self.client.put(
@@ -2775,6 +2901,7 @@ class VideoTestCase(
             },
             format="json",
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         # Do attribute searches on localization data
@@ -2789,6 +2916,7 @@ class VideoTestCase(
             response = self.client.get(
                 f"/rest/Localizations/{self.project.pk}?attribute={key}::{value}", format=json
             )
+            response = collect_streaming_content(response)
             self.assertEqual(len(response.data), 4)
             encoded_search = base64.b64encode(
                 json.dumps({"attribute": key, "operation": "eq", "value": value}).encode()
@@ -2797,6 +2925,7 @@ class VideoTestCase(
                 f"/rest/Medias/{self.project.pk}?encoded_related_search={encoded_search.decode()}&sort_by=-$incident",
                 format="json",
             )
+            response = collect_streaming_content(response)
             matches = len(response.data)
             self.assertEqual(matches, 2)
 
@@ -2813,6 +2942,7 @@ class VideoTestCase(
                 f"/rest/Medias/{self.project.pk}?start=0&stop=10&encoded_related_search={encoded_search.decode()}&sort_by=-$incident",
                 format="json",
             )
+            response = collect_streaming_content(response)
             assertResponse(self, response, status.HTTP_200_OK)
             matches = len(response.data)
             self.assertEqual(matches, 2)
@@ -2942,7 +3072,7 @@ class VideoTestCase(
     def test_annotation_delete(self):
         medias = [
             create_test_video(self.user, f"asdf{idx}", self.entity_type, self.project)
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         state_type = StateType.objects.create(
             project=self.project, name="track_type", association="Localization", attribute_types=[]
@@ -2968,6 +3098,7 @@ class VideoTestCase(
                 }
             )
         response = self.client.post(f"/rest/States/{self.project.pk}", state_specs, format="json")
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_201_CREATED)
         # Test detail delete
         response = self.client.get(
@@ -3009,6 +3140,7 @@ class VideoTestCase(
                 }
             )
         response = self.client.post(f"/rest/States/{self.project.pk}", state_specs, format="json")
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_201_CREATED)
         # Test list delete
         response = self.client.get(
@@ -3064,7 +3196,7 @@ class ImageTestCase(
                 self.project,
                 attributes={"Float Test": random.random() * 1000},
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.media_entities = self.entities
         self.list_uri = "Medias"
@@ -3146,7 +3278,7 @@ class LocalizationBoxTestCase(
                 0,
                 attributes={"Float Test": random.random() * 1000},
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
@@ -3231,7 +3363,7 @@ class LocalizationLineTestCase(
                 0,
                 attributes={"Float Test": random.random() * 1000},
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
@@ -3316,7 +3448,7 @@ class LocalizationDotTestCase(
                 0,
                 attributes={"Float Test": random.random() * 1000},
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
@@ -3399,7 +3531,7 @@ class LocalizationPolyTestCase(
                 0,
                 attributes={"Float Test": random.random() * 1000},
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.list_uri = "Localizations"
         self.detail_uri = "Localization"
@@ -3474,7 +3606,7 @@ class StateTestCase(
             for idx in range(random.randint(3, 10))
         ]
         self.entities = []
-        for _ in range(random.randint(6, 10)):
+        for _ in range(10):
             state = State.objects.create(
                 created_by=self.user,
                 modified_by=self.user,
@@ -3686,24 +3818,28 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 4)
 
         response = self.client.delete(f"/rest/Media/{media_id2}", format="json")
         assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 3)
 
         response = self.client.delete(f"/rest/Media/{media_id3}", format="json")
         assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 2)
 
         response = self.client.delete(f"/rest/Media/{media_id4}", format="json")
         assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
     def test_multiple_media_delete(self):
@@ -3800,11 +3936,13 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         response = self.client.get(
             f"/rest/Localizations/{self.project.pk}?related_attribute=String Test::{unique_string_attr_val1}"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 3)
 
         response = self.client.get(
             f"/rest/Localizations/{self.project.pk}?related_attribute=String Test::{unique_string_attr_val2}"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 3)
 
         response = self.client.delete(
@@ -3816,11 +3954,13 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         response = self.client.get(
             f"/rest/Localizations/{self.project.pk}?related_attribute=String Test::{unique_string_attr_val1}"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         response = self.client.get(
             f"/rest/Localizations/{self.project.pk}?related_attribute=String Test::{unique_string_attr_val2}"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 3)
 
         response = self.client.delete(
@@ -3832,9 +3972,11 @@ class LocalizationMediaDeleteCase(TatorTransactionTest):
         response = self.client.get(
             f"/rest/Localizations/{self.project.pk}?related_attribute=String Test::{unique_string_attr_val2}"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         response = self.client.get(f"/rest/Localizations/{self.project.pk}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
 
@@ -3903,16 +4045,19 @@ class StateMediaDeleteCase(TatorTransactionTest):
             }
         ]
         response = self.client.post(f"/rest/States/{self.project.pk}", create_json, format="json")
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 1)
 
         response = self.client.get(f"/rest/States/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 1)
 
         response = self.client.delete(f"/rest/Media/{media_id}", format="json")
         assertResponse(self, response, status.HTTP_200_OK)
 
         response = self.client.get(f"/rest/States/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
     def test_multiple_media_delete(self):
@@ -3993,15 +4138,18 @@ class StateMediaDeleteCase(TatorTransactionTest):
             },
         ]
         response = self.client.post(f"/rest/States/{self.project.pk}", create_json, format="json")
+        response = collect_streaming_content(response)
         assertResponse(self, response, status.HTTP_201_CREATED)
         self.assertEqual(len(response.data["id"]), 2)
 
         response = self.client.get(f"/rest/Medias/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 3)
 
         response = self.client.get(
             f"/rest/States/{self.project.pk}?related_attribute={attr_search}"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 2)
 
         not_deleted = State.objects.filter(
@@ -4019,6 +4167,7 @@ class StateMediaDeleteCase(TatorTransactionTest):
         response = self.client.get(
             f"/rest/Medias/{self.project.pk}?attribute={attr_search}", format="json"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         not_deleted_medias = Media.objects.filter(
@@ -4035,14 +4184,17 @@ class StateMediaDeleteCase(TatorTransactionTest):
         )
 
         response = self.client.get(f"/rest/States/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         response = self.client.get(f"/rest/States/{self.project.pk}?attribute={attr_search}")
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
         response = self.client.get(
             f"/rest/States/{self.project.pk}?related_attribute={attr_search}"
         )
+        response = collect_streaming_content(response)
         self.assertEqual(len(response.data), 0)
 
 
@@ -4059,7 +4211,7 @@ class LeafTestCase(
     def setUp(self):
         super().setUp()
         print(f"\n{self.__class__.__name__}=", end="", flush=True)
-        logging.disable(logging.CRITICAL)
+        # logging.disable(logging.CRITICAL)
         self.user = create_test_user()
         self.client.force_authenticate(self.user)
         self.project = create_test_project(self.user)
@@ -4076,7 +4228,7 @@ class LeafTestCase(
                 self.project,
                 attributes={"Float Test": random.random() * 1000},
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.list_uri = "Leaves"
         self.detail_uri = "Leaf"
@@ -4189,7 +4341,7 @@ class LeafTypeTestCase(
         self.project = create_test_project(self.user)
         self.membership = create_test_membership(self.user, self.project)
         self.entities = [
-            LeafType.objects.create(project=self.project) for _ in range(random.randint(6, 10))
+            LeafType.objects.create(project=self.project) for _ in range(10)
         ]
         self.list_uri = "LeafTypes"
         self.detail_uri = "LeafType"
@@ -4405,7 +4557,7 @@ class ProjectTestCase(TatorTransactionTest):
         self.client.force_authenticate(self.user)
         self.organization = create_test_organization()
         self.affiliation = create_test_affiliation(self.user, self.organization)
-        self.entities = [create_test_project(self.user) for _ in range(random.randint(6, 10))]
+        self.entities = [create_test_project(self.user) for _ in range(10)]
         memberships = [create_test_membership(self.user, entity) for entity in self.entities]
         self.detail_uri = "Project"
         self.list_uri = "Projects"
@@ -4614,7 +4766,7 @@ class VersionTestCase(
         self.media = create_test_video(self.user, f"asdf", self.entity_type, self.project)
         self.entities = [
             create_test_version(f"asdf{idx}", f"desc{idx}", idx, self.project, self.media)
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.list_uri = "Versions"
         self.detail_uri = "Version"
@@ -4723,7 +4875,7 @@ class FavoriteStateTestCase(
             create_test_favorite(
                 f"Favorite {idx}", self.project, self.user, self.state_type, "State"
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.create_json = {
             "name": "My fave",
@@ -4771,7 +4923,7 @@ class FavoriteLocalizationTestCase(
             create_test_favorite(
                 f"Favorite {idx}", self.project, self.user, self.box_type, "Localization"
             )
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.create_json = {
             "name": "My fave",
@@ -4808,7 +4960,7 @@ class BookmarkTestCase(
         )
         self.entities = [
             create_test_bookmark(f"Bookmark {idx}", self.project, self.user)
-            for idx in range(random.randint(6, 10))
+            for idx in range(10)
         ]
         self.list_uri = "Bookmarks"
         self.detail_uri = "Bookmark"
@@ -5789,7 +5941,7 @@ class AttributeTestCase(TatorTransactionTest):
                 0,
                 {"Int Test": random.randint(-100, 100)},
             )
-            for _ in range(random.randint(6, 10))
+            for _ in range(10)
         ]
         self.list_uri = "AttributeType"
         self.edit_permission = Permission.FULL_CONTROL
@@ -6646,13 +6798,23 @@ class SectionTestCase(TatorTransactionTest):
             media_resp = self.client.get(
                 f"/rest/Localizations/{self.project.pk}?media_id={media.pk}"
             )
+            media_resp = collect_streaming_content(media_resp)
             self.assertEqual(len(media_resp.data), 10)
 
         assert len(sections) == 5
         for section in sections:
             url = f"/rest/Localizations/{self.project.pk}?section={section}"
             response = self.client.get(url, format="json")
+            response = collect_streaming_content(response)
             self.assertEqual(len(response.data), 10)
+
+        # Test multiple sections
+        sect_ids_str = ",".join([str(i) for i in sections])
+        url = f"/rest/Localizations/{self.project.pk}?multi_section={sect_ids_str}"
+        response = self.client.get(url, format="json")
+        response = collect_streaming_content(response)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 50)
 
     def test_multi_section_lookup(self):
         """
@@ -6700,6 +6862,7 @@ class SectionTestCase(TatorTransactionTest):
             sect_ids_str = ",".join(sect_id_strs[x:])
             url = f"/rest/Medias/{self.project.pk}?multi_section={sect_ids_str}"
             response = self.client.get(url, format="json")
+            response = collect_streaming_content(response)
             self.assertEqual(len(response.data), 5 - x)
 
         # Test a blob attribute
@@ -7282,6 +7445,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
 
             # Before we do anything, verify we get a media count of 0
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 0)
 
@@ -7326,6 +7490,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
 
             # Verify we only see one media thus far
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 1)
 
@@ -7386,6 +7551,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
 
             # Fetch all the media for the project as kirk
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 3)
 
@@ -7393,6 +7559,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # (Both the warp core and warp core alternate)
             self.client.force_authenticate(user=self.red_shirt)
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 2)
 
@@ -7440,6 +7607,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
 
             # Fetch all localizations for the warp core
             resp = self.client.get(f"/rest/Localizations/{self.project.pk}?media={media_id}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 2)
 
@@ -7470,6 +7638,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             state_id = resp.data["id"][0]
             # Assert we get two States from Kirk's permission
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={media_id}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 2)
 
@@ -7481,10 +7650,12 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Switch back to the red shirt and verify we get 1 localization and 1 state
             self.client.force_authenticate(user=self.red_shirt)
             resp = self.client.get(f"/rest/Localizations/{self.project.pk}?media={media_id}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 1)
 
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={media_id}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_200_OK)
             self.assertEqual(len(resp.data), 1)
 
@@ -7520,6 +7691,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Now switch to the commandant and verify there is no permission
             self.client.force_authenticate(user=self.commandant)
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
 
             # kirk delete the row protection of engineering
@@ -7530,6 +7702,7 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Now switch to the redshirt and verify they can't see the engineering section
             self.client.force_authenticate(user=self.red_shirt)
             resp = self.client.get(f"/rest/Medias/{self.project.pk}")
+            resp = collect_streaming_content(resp)
             assertResponse(self, resp, status.HTTP_403_FORBIDDEN)
 
 
@@ -7737,11 +7910,13 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Verify that the analysts see this on their layer
             self.client.force_authenticate(user=self.analyst1)
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst1_version},{self.baseline_version}")
+            resp = collect_streaming_content(resp)
             assert(resp.status_code == status.HTTP_200_OK)
             assert(len(resp.data) == 1)
             assert(resp.data[0]["attributes"]["String Test"] == "original")
             self.client.force_authenticate(user=self.analyst2)
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst2_version},{self.baseline_version}")
+            resp = collect_streaming_content(resp)
             assert(resp.status_code == status.HTTP_200_OK)
             assert(len(resp.data) == 1)
             assert(resp.data[0]["attributes"]["String Test"] == "original")
@@ -7749,10 +7924,12 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Verify that analysts can see baseline states even if they select another layer
             self.client.force_authenticate(user=self.analyst1)
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst2_version},{self.baseline_version}")
+            resp = collect_streaming_content(resp)
             assert(resp.status_code == status.HTTP_200_OK)
             assert(len(resp.data) == 1)
             self.client.force_authenticate(user=self.analyst2)
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst1_version},{self.baseline_version}")
+            resp = collect_streaming_content(resp)
             assert(resp.status_code == status.HTTP_200_OK)
             assert(len(resp.data) == 1)
 
@@ -7791,11 +7968,13 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Verify that the analysts see this on their layer
             self.client.force_authenticate(user=self.analyst1)
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst1_version},{self.baseline_version}")
+            resp = collect_streaming_content(resp)
             assert(resp.status_code == status.HTTP_200_OK)
             assert(len(resp.data) == 1)
             assert(resp.data[0]["attributes"]["String Test"] == "edited by analyst1")
             self.client.force_authenticate(user=self.analyst2)
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst2_version},{self.baseline_version}")
+            resp = collect_streaming_content(resp)
             assert(resp.status_code == status.HTTP_200_OK)
             assert(len(resp.data) == 1)
             assert(resp.data[0]["attributes"]["String Test"] == "original")
@@ -7811,11 +7990,13 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Verify that the analysts see this on their layer
             self.client.force_authenticate(user=self.analyst1)
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst1_version},{self.baseline_version}")
+            resp = collect_streaming_content(resp)
             assert(resp.status_code == status.HTTP_200_OK)
             assert(len(resp.data) == 1)
             assert(resp.data[0]["attributes"]["String Test"] == "edited again by analyst1")
             self.client.force_authenticate(user=self.analyst2)
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst2_version},{self.baseline_version}")
+            resp = collect_streaming_content(resp)
             assert(resp.status_code == status.HTTP_200_OK)
             assert(len(resp.data) == 1)
             assert(resp.data[0]["attributes"]["String Test"] == "original")
@@ -7827,10 +8008,12 @@ if os.getenv("TATOR_FINE_GRAIN_PERMISSION") == "true":
             # Verify that the analysts see this on their layer
             self.client.force_authenticate(user=self.analyst1)
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst1_version},{self.baseline_version}")
+            resp = collect_streaming_content(resp)
             assert(resp.status_code == status.HTTP_200_OK)
             assert(len(resp.data) == 0)
             self.client.force_authenticate(user=self.analyst2)
             resp = self.client.get(f"/rest/States/{self.project.pk}?media={self.video.pk}&version={self.analyst2_version},{self.baseline_version}")
+            resp = collect_streaming_content(resp)
             assert(resp.status_code == status.HTTP_200_OK)
             assert(len(resp.data) == 1)
             assert(resp.data[0]["attributes"]["String Test"] == "original")

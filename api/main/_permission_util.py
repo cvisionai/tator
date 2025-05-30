@@ -25,6 +25,8 @@ logger = logging.getLogger(__name__)
 
 CHILD_SHIFT = 8
 
+from collections import defaultdict
+
 
 class ColBitAnd(Func):
     function = ""
@@ -136,16 +138,23 @@ def shift_permission(model, source_model):
         assert False, f"Unhandled model {model}"
 
 
-def augment_permission(user, qs):
+def augment_permission(user, qs, exists=None, project=None, groups=None, organizations=None):
     # Add effective_permission to the queryset
-    if qs.exists():
+    if type(exists) == type(None):
+        exists = qs.exists()
+    if exists:
         model = qs.model
+
+        if "effective_permission" in qs.query.annotations:
+            return qs
         # handle shift due to underlying model
         # children are shifted by 8 bits, grandchildren by 16, etc.
         bit_shift = shift_permission(model, Project)
-        groups = user.groupmembership_set.all().values("group").distinct()
+        if groups is None:
+            groups = list(user.groupmembership_set.all().values_list("group",flat=True).distinct())
         # groups = Group.objects.filter(pk=-1).values("id")
-        organizations = user.affiliation_set.all().values("organization")
+        if organizations is None:
+           organizations = list(user.affiliation_set.all().values_list("organization", flat=True).distinct())
 
         # Exclude projects + organizational level objects
         if not model in [
@@ -159,7 +168,9 @@ def augment_permission(user, qs):
             Invitation,
         ]:
             # This assumes all checks are scoped to the same project (expensive to check in runtime)
-            project = qs[0].project
+            if project is None:
+                simple_qs = qs.order_by().values("project")[:1]
+                project = simple_qs[0]['project']
 
             # Filter for all relevant permissions the user has and OR them together
             # If someone is in a group with a permission, you can't remove it via a user-level
@@ -209,27 +220,6 @@ def augment_permission(user, qs):
     else:
         # If an object doesn't exist, we can't annotate it
         return qs.annotate(effective_permission=Value(0))
-
-    if qs.query.low_mark != 0 or qs.query.high_mark is not None:
-        # This is a slice, we need to get the full queryset to annotate + filter
-        new_qs = model.objects.filter(pk__in=qs.values("pk"))
-        new_qs = new_qs.alias(
-            project_permission=Value(project_permission >> bit_shift),
-        )
-        if qs.exists():
-            if hasattr(qs[0], "incident"):
-                incident_cases_dict = {
-                    entry["pk"]: entry["incident"] for entry in qs.values("pk", "incident")
-                }
-                incident_cases = [
-                    When(pk=pk, then=Value(incident))
-                    for pk, incident in incident_cases_dict.items()
-                ]
-                new_qs = new_qs.annotate(
-                    incident=Case(*incident_cases, default=Value(None), output_field=IntegerField())
-                )
-
-        qs = new_qs
 
     if model in [Announcement]:
         # Everyone can read announcements
@@ -400,7 +390,7 @@ def augment_permission(user, qs):
             ),
         )
     elif model in [Algorithm]:
-        algo_rp = RowProtection.objects.filter(algorithm__pk__in=qs.values("pk")).filter(
+        algo_rp = RowProtection.objects.filter(algorithm__project=project, algorithm__pk__in=qs.values("pk")).filter(
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
         )
         algo_rp = algo_rp.annotate(
@@ -419,7 +409,7 @@ def augment_permission(user, qs):
             ),
         )
     elif model in [Version]:
-        version_rp = RowProtection.objects.filter(version__pk__in=qs.values("pk")).filter(
+        version_rp = RowProtection.objects.filter(version__project=project, version__pk__in=qs.values("pk")).filter(
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
         )
         version_rp = version_rp.annotate(
@@ -447,7 +437,7 @@ def augment_permission(user, qs):
         # project-level permissions
 
         # First get all sections including parents (this includes self)
-        section_rp = RowProtection.objects.filter(section__pk__in=qs.values("pk")).filter(
+        section_rp = RowProtection.objects.filter(section__project=project, section__pk__in=qs.values("pk")).filter(
             Q(user=user) | Q(group__in=groups) | Q(organization__in=organizations)
         )
         section_rp = section_rp.annotate(
@@ -457,6 +447,7 @@ def augment_permission(user, qs):
             entry["section"]: entry["calc_perm"]
             for entry in section_rp.values("section", "calc_perm")
         }
+
         section_cases = [
             When(pk=section, then=Value(perm)) for section, perm in section_perm_dict.items()
         ]
@@ -470,18 +461,23 @@ def augment_permission(user, qs):
     elif model in [Media]:
         # For these models, we can use the section+project to determine permissions
         #
-        effected_sections = qs.values("primary_section__pk")
-
-        section_qs = Section.objects.filter(pk__in=effected_sections)
-        section_qs = augment_permission(user, section_qs)
+        section_qs = Section.objects.filter(project=project, pk__in=qs.values("primary_section"))
+        section_qs = augment_permission(user, section_qs, exists=True, project=project, groups=groups, organizations=organizations)
 
         section_perm_dict = {
             entry["pk"]: (entry["effective_permission"] >> CHILD_SHIFT)
             for entry in section_qs.values("pk", "effective_permission")
         }
+
+        # Create a dictionary by permission to associate so we can use an in
+        # statement to annotate the queryset
+        perm_map = defaultdict(list)
+        for section, perm in section_perm_dict.items():
+            perm_map[perm].append(section)
+
         section_cases = [
-            When(primary_section=section, then=Value(perm))
-            for section, perm in section_perm_dict.items()
+            When(primary_section__in=sections, then=Value(perm))
+            for perm, sections in perm_map.items()
         ]
         qs = qs.annotate(
             effective_permission=Case(
@@ -493,39 +489,34 @@ def augment_permission(user, qs):
     elif model in [Localization, State]:
         # For these models, we can use the section+version+project to determine permissions
         #
+        # Calculate a dictionary for permissions by section and version in this set
+        effected_versions = qs.values_list("version__pk").distinct()
         if model == Localization:
             qs = qs.annotate(section=F("media__primary_section__pk"))
+            effected_sections = qs.values("media__primary_section__pk").distinct()
         elif model == State:
             sb = Subquery(
                 Media.objects.filter(state__pk=OuterRef("pk")).values("primary_section__pk")[:1]
             )
             qs = qs.annotate(section=sb)
-
-        # Calculate a dictionary for permissions by section and version in this set
-        effected_media = qs.values("media__pk")
-        effected_sections = (
+            effected_sections = (
             Section.objects.filter(project=project, pk__in=qs.values("section"))
-            .values("pk")
-            .distinct()
-        )
-        effected_versions = qs.values("version__pk")
-
+            .values("pk").distinct())
         # Calculate augmented permission which accounts for usage of default
         # permission at either the section or version level (e.g. no RP)
-        section_qs = Section.objects.filter(pk__in=effected_sections)
-        section_qs = augment_permission(user, section_qs)
-        version_qs = Version.objects.filter(pk__in=effected_versions)
-        version_qs = augment_permission(user, version_qs)
-
+        section_qs = Section.objects.filter(pk__in=effected_sections, project=project)
+        section_qs = augment_permission(user, section_qs, exists=True, project=project, groups=groups, organizations=organizations)
+        version_qs = Version.objects.filter(pk__in=effected_versions, project=project)
+        version_qs = augment_permission(user, version_qs, exists=True, project=project, groups=groups, organizations=organizations)
         # Make dicts and account for child shift of each type
         # Versions direct child is metadata, but for sections is 2 shifts
         section_perm_dict = {
             entry["pk"]: (entry["effective_permission"] >> (CHILD_SHIFT * 2))
-            for entry in section_qs.values("pk", "effective_permission")
+            for entry in section_qs.values("pk", "effective_permission").iterator()
         }
         version_perm_dict = {
             entry["pk"]: (entry["effective_permission"] >> CHILD_SHIFT)
-            for entry in version_qs.values("pk", "effective_permission")
+            for entry in version_qs.values("pk", "effective_permission").iterator()
         }
 
         # Based on the sections and versions create a case match for each permutation

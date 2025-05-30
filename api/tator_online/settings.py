@@ -253,6 +253,7 @@ REST_FRAMEWORK = {
         "main.renderers.TatorRenderer",
         "main.renderers.CsvRenderer",
         "main.renderers.PprintRenderer",
+        "main.renderers.TatorJSONLRenderer",
     ),
     "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.openapi.AutoSchema",
     "DEFAULT_THROTTLE_CLASSES": [

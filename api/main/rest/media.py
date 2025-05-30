@@ -1,6 +1,7 @@
 import logging
 import datetime
 from itertools import chain
+from collections import defaultdict
 import os
 import shutil
 import mimetypes
@@ -11,10 +12,12 @@ from urllib.parse import urlparse
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction, connection
-from django.db.models import Case, When
+
 from django.http import Http404
 from django.core.exceptions import PermissionDenied
 from PIL import Image
+import ujson
+import time
 
 from ..models import (
     Media,
@@ -51,9 +54,10 @@ from ._util import (
     computeRequiredFields,
     check_required_fields,
     url_to_key,
+    optimize_qs,
 )
 
-from ._base_views import BaseListView, BaseDetailView
+from ._base_views import StreamingListView, BaseDetailView
 from ._media_query import get_media_queryset
 from ._attributes import bulk_patch_attributes, patch_attributes, validate_attributes
 from ._permissions import (
@@ -132,7 +136,38 @@ def _presign(user_id, expiration, medias, fields=None, no_cache=False):
     cache = TatorCache()
     ttl = expiration - 3600
 
+    media_path_set = set()
+    presigned = {} # initialize to blank
     # Get replace all keys with presigned urls.
+    if no_cache == False:
+        for media in medias:
+            if media.get("media_files") is None:
+                continue
+
+            for field in fields:
+                if field not in media["media_files"]:
+                    continue
+
+                for media_def in media["media_files"][field]:
+                    # Get path url
+                    # If the path is a bona fide URL, don't attempt to presign it
+                    if urlparse(media_def["path"]).scheme != "":
+                        continue
+                    media_path_set.add(media_def["path"])
+                    if field == "streaming":
+                        if "segment_info" in media_def:
+                            media_path_set.add(media_def["segment_info"])
+                        else:
+                            logger.warning(
+                                f"No segment file in media {media['id']} for file {media_def['path']}!"
+                            )
+        # Attempt to fetch these all from REDIS(tm)
+        presigned = cache.get_presigned_multi(user_id, list(media_path_set))
+
+    # Loop through again and fill in from cache where we can else presign
+
+    to_cache_paths = []
+    to_cache_urls = []
     for media in medias:
         if media.get("media_files") is None:
             continue
@@ -146,29 +181,29 @@ def _presign(user_id, expiration, medias, fields=None, no_cache=False):
                 # If the path is a bona fide URL, don't attempt to presign it
                 if urlparse(media_def["path"]).scheme != "":
                     continue
-                url = cache.get_presigned(user_id, media_def["path"])
-                if no_cache or (url is None):
-                    tator_store = store_lookup[media_def["path"]]
-                    url = tator_store.get_download_url(media_def["path"], expiration)
-                    if ttl > 0 and not no_cache:
-                        cache.set_presigned(user_id, media_def["path"], url, ttl)
-                media_def["path"] = url
-                # Get segment url
+                if presigned.get(media_def["path"], None):
+                    media_def["path"] = presigned[media_def["path"]]
+                else:
+                    # Presign the path.
+                    to_cache_paths.append(media_def["path"])
+                    media_def["path"] = store_lookup[media_def["path"]].get_download_url(
+                        media_def["path"], expiration=expiration
+                    )
+                    to_cache_urls.append(media_def["path"])
+
                 if field == "streaming":
                     if "segment_info" in media_def:
-                        url = cache.get_presigned(user_id, media_def["segment_info"])
-                        if no_cache or (url is None):
-                            tator_store = store_lookup[media_def["segment_info"]]
-                            url = tator_store.get_download_url(
-                                media_def["segment_info"], expiration
-                            )
-                            if ttl > 0 and not no_cache:
-                                cache.set_presigned(user_id, media_def["segment_info"], url, ttl)
-                        media_def["segment_info"] = url
-                    else:
-                        logger.warning(
-                            f"No segment file in media {media['id']} for file {media_def['path']}!"
-                        )
+                        if presigned.get(media_def["segment_info"], None):
+                            media_def["segment_info"] = presigned[media_def["segment_info"]]
+                        else:
+                            to_cache_paths.append(media_def["segment_info"])
+                            media_def["segment_info"] = store_lookup[
+                                media_def["segment_info"]
+                            ].get_download_url(media_def["segment_info"], expiration=expiration)
+                            to_cache_urls.append(media_def["segment_info"])
+    # Only cache if we are using it
+    if no_cache == False:
+        cache.set_presigned_multi(user_id, to_cache_paths, to_cache_urls, ttl)
 
 
 def _save_image(url, media_obj, project_obj, role):
@@ -401,13 +436,12 @@ def _create_media(project, params, user, use_rq=False):
         f"Media object {media_obj.id} created for {media_type.dtype} {name} "
         f"on project {media_type.project.name}"
     )
-    logger.info(msg)
     log_creation(media_obj, media_obj.project, user)
 
     return media_obj, msg, section_obj
 
 
-class MediaListAPI(BaseListView):
+class MediaListAPI(StreamingListView):
     """Interact with list of media.
 
     A media may be an image or a video. Media are a type of entity in Tator,
@@ -420,6 +454,8 @@ class MediaListAPI(BaseListView):
     schema = MediaListSchema()
     http_method_names = ["get", "post", "patch", "delete", "put"]
     entity_type = MediaType  # Needed by attribute filter mixin
+    _viewables = None
+    _range = [0, None]
 
     def get_permissions(self):
         """Require transfer permissions for POST, edit otherwise."""
@@ -434,8 +470,11 @@ class MediaListAPI(BaseListView):
         return super().get_permissions()
 
     def get_queryset(self, **kwargs):
+        if type(self._viewables) != type(None):
+            # Reapply slices as required
+            self._viewables.query.set_limits(self._range[0], self._range[1])
+            return self._viewables
         params = {**self.params}
-
         # POST takes section as a name not an ID
         # Return the media queryset only if we have permissions to make a section if it doesn't exist
         if self.request.method == "POST":
@@ -454,7 +493,14 @@ class MediaListAPI(BaseListView):
                     if not can_create:
                         raise PermissionDenied
 
-        return self.filter_only_viewables(get_media_queryset(self.params["project"], params))
+        media_qs = get_media_queryset(self.params["project"], params)
+        viewables = self.filter_only_viewables(media_qs)
+        self._viewables = viewables
+        self._range = [self._viewables.query.low_mark, self._viewables.query.high_mark]
+        # clear range for cache
+        self._viewables.query.low_mark = 0
+        self._viewables.query.high_mark = None
+        return self._viewables
 
     def _get(self, params):
         """Retrieve list of media.
@@ -462,17 +508,75 @@ class MediaListAPI(BaseListView):
         A media may be an image or a video. Media are a type of entity in Tator,
         meaning they can be described by user defined attributes.
         """
+        import time
         qs = self.get_queryset()
         fields = [*MEDIA_PROPERTIES]
         if params.get("encoded_related_search") == None:
             fields.remove("incident")
-        response_data = list(qs.values(*fields))
         presigned = params.get("presigned")
-        if presigned is not None:
-            no_cache = params.get("no_cache", False)
-            presign_only = params.get("presign_only", None)
-            _presign(self.request.user.pk, presigned, response_data, fields=presign_only, no_cache=no_cache)
-        return response_data
+        partial_fields_selected = None
+        if params.get("fields") is not None:
+            fields = []
+            fields_param = params.get('fields', '').split(',')
+            
+            for field in fields_param:
+                if len(field.split('.')) > 1:
+                    if partial_fields_selected is None:
+                        partial_fields_selected = defaultdict(set)
+                    partial_fields_selected[field.split('.')[0]].add(field.split('.')[1])
+                else:
+                    fields.append(field)
+
+        # Handle JSON fields specially
+        qs,_,_ = optimize_qs(Media, qs, fields, partial_fields = partial_fields_selected)
+        s = time.time()
+        first_one = True
+        requested_format = self.request.accepted_renderer.format
+        if requested_format in ["json", "jsonl"]:
+            if requested_format == "json":
+                yield "["
+            for record in qs.iterator():
+                response_data = record
+                # Add media_files and attributes back in parsed with ujson
+                e = time.time()
+                if presigned is not None:
+                    no_cache = params.get("no_cache", False)
+                    presign_only = params.get("presign_only", None)
+                    _presign(
+                        self.request.user.pk,
+                        presigned,
+                        [response_data],
+                        fields=presign_only,
+                        no_cache=no_cache,
+                    )
+
+                if requested_format == "jsonl":
+                    yield ujson.dumps(response_data) + '\n'
+                elif first_one:
+                    first_one = False
+                    yield ujson.dumps(response_data)
+                else:
+                    yield "," + ujson.dumps(response_data)
+
+            if requested_format == "json":
+                yield "]"
+        elif requested_format == 'csv':
+            attr_types = qs.values("type__attribute_types")
+            attr_name_set = set()
+            for x in attr_types:
+                type_defs = x['type__attribute_types']
+                if type_defs:
+                    attr_name_set.update([attr['name'] for attr in type_defs])
+            first_one = True
+            for element in qs.iterator():
+                for k in attr_name_set:
+                    element[k] = str(element['attributes'].get(k,""))
+                del element["attributes"]
+                if first_one:
+                    first_one = False
+                    yield ",".join(element.keys()) + "\n"
+
+                yield ",".join([str(v) for v in element.values()]) + "\n"
 
     def get_model(self):
         return Media
@@ -737,6 +841,8 @@ class MediaDetailAPI(BaseDetailView):
     schema = MediaDetailSchema()
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
+    _viewables = None
+
 
     def get_permissions(self):
         """Require transfer permissions for POST, edit otherwise."""
@@ -790,7 +896,6 @@ class MediaDetailAPI(BaseDetailView):
                 or "reset_attributes" in params
             ):
                 new_attrs = validate_attributes(params, media)
-                logger.info(f"new_attrs={new_attrs}")
                 bulk_patch_attributes(new_attrs, qs)
 
             if "name" in params:
@@ -976,4 +1081,7 @@ class MediaDetailAPI(BaseDetailView):
         return {"message": f'Media {params["id"]} successfully deleted!'}
 
     def get_queryset(self, **kwargs):
-        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"], deleted=False))
+        if type(self._viewables) != type(None):
+            return self._viewables
+        self._viewables = self.filter_only_viewables(Media.objects.filter(pk=self.params["id"], deleted=False))
+        return self._viewables

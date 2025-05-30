@@ -102,10 +102,13 @@ class ProjectPermissionBase(BasePermission):
         if request.method in ["GET", "HEAD", "PATCH", "DELETE", "PUT"]:
             ### GET, HEAD, PATCH, DELETE require permissions on the item itself
             perm_qs = view.get_queryset(override_params={"show_all_marks": 1})
-            perm_qs = augment_permission(request.user, perm_qs)
-            model = view.get_queryset().model
-
-            if perm_qs.exists():
+            # Remove limits as they don't apply to existance checks
+            perm_qs.query.low_mark = 0
+            perm_qs.query.high_mark = None
+            model = perm_qs.model
+            exists = perm_qs.only("pk").exists()
+            perm_qs = augment_permission(request.user, perm_qs, exists)
+            if exists:
                 # See if any objects in the requested set DON'T have the required permission
                 perm_qs = perm_qs.annotate(
                     bitand=ColBitAnd(
@@ -134,7 +137,7 @@ class ProjectPermissionBase(BasePermission):
                         f"Proj Query = {perm_qs.values('id', 'bitand', 'effective_permission', 'granted')}"
                     )
 
-            if not perm_qs.exists() and request.method in ["GET", "HEAD", "PUT", "DELETE"]:
+            if not exists and request.method in ["GET", "HEAD", "PUT", "DELETE"]:
                 ## If there are no objects to check or no permissions we have to go to the parent object
                 ## If we are permissive (reading) we can see if the user has read permissions on the project itself
                 ## to avoid a 403, even if the set is empty

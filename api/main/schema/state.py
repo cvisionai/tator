@@ -93,6 +93,17 @@ class StateListSchema(AutoSchema):
             )
         if method in ["PATCH", "DELETE"]:
             params += safety_parameter_schema
+
+        if method in ["GET", "PUT"]:
+            params += [
+                {
+                    "name": "fields",
+                    "in": "query",
+                    "required": False,
+                    "description": "A comma-separated list of fields to include in the response. Example: id,name,attributes.color",
+                    "schema": {"type": "string"},
+                }
+            ]
         return params
 
     def get_request_body(self, path, method):

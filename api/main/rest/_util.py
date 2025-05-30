@@ -9,6 +9,10 @@ import socket
 from django.contrib.contenttypes.models import ContentType
 from django.utils.http import urlencode
 from django.db.models.expressions import Subquery
+from django.db.models import TextField, F, DateTimeField, JSONField, UUIDField, Func, Value, JSONField
+from django.db.models.functions import Cast
+from django.core.exceptions import PermissionDenied, FieldDoesNotExist
+
 from rest_framework.reverse import reverse
 from rest_framework.exceptions import APIException
 from rest_framework.exceptions import PermissionDenied
@@ -17,6 +21,7 @@ from rest_framework.exceptions import NotFound
 from ..models import type_to_obj, ChangeLog, ChangeToObject, Membership, Project, Permission, User
 
 from ._attributes import bulk_patch_attributes, convert_attribute
+from django.db.models import Func
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +30,50 @@ class Array(Subquery):
     """Class to expose ARRAY SQL function to ORM"""
 
     template = "ARRAY(%(subquery)s)"
+
+class CastToJson(Func):
+    """
+    Custom Django Func to cast a field to text and then to JSON.
+    Equivalent to SQL: (field::text)::json
+    """
+    function = 'to_char'
+    #to_char('2022-03-31 17:39:23.500'::timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MSOF')
+    template = """to_char(%(expressions)s::timestamp, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')"""
+    output_field = TextField()
+
+class JSONObjectGet(Func):
+    function = 'jsonb_extract_path'
+    output_field = JSONField()
+
+class JSONObjectBuild(Func):
+    function = 'jsonb_build_object'
+    arity = None
+    output_field = JSONField()
+
+def optimize_qs(model, qs, fields, partial_fields=None):
+    new_fields = [*fields]
+    annotations = {}
+    for field in fields:
+        try:
+            field_type = type(model._meta.get_field(field))
+            if field_type in [UUIDField]:
+                new_fields.remove(field)
+                annotations[field] = Cast(field, TextField())
+            if field_type in [DateTimeField]:
+                new_fields.remove(field)
+                annotations[field] = CastToJson(field)
+        except FieldDoesNotExist:
+            pass
+
+    if partial_fields:
+        for field_name,value in partial_fields.items():
+            build_args = []
+            for partial_key in value:
+                build_args.extend([Value(partial_key), JSONObjectGet(field_name, Value(partial_key))])
+            if build_args:
+                annotations[field_name] = JSONObjectBuild(*build_args)
+    annotation_fields = [key for key in annotations.keys()]
+    return qs.values(*new_fields).annotate(**annotations),new_fields,annotation_fields
 
 
 def compute_user(project, user, user_elemental_id):

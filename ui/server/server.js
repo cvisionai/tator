@@ -145,13 +145,22 @@ for (const [dir, path] of Object.entries(staticMap)) {
     express.static(dir, { setHeaders: addHeaders, maxAge: maxAgeMilliseconds, immutable: true })
   );
   if (dir === "./server/static" && path != "/static") {
-    // This lets djangi admin panel see static files at static as it doesn't get templated with GIT_REVISION
+    // This lets django admin panel see static files at static as it doesn't get templated with GIT_REVISION
     app.use(
       "/static",
       express.static(dir, {
         setHeaders: addHeaders,
         maxAge: maxAgeMilliseconds,
         immutable: true,
+      })
+    );
+  }
+  if (dir === "../scripts" && path != "/static") {
+    app.use(
+      "/static/scripts",
+      express.static(dir, {
+        setHeaders: addHeaders,
+        maxAge: maxAgeMilliseconds,
       })
     );
   }
