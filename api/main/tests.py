@@ -6812,6 +6812,8 @@ class SectionTestCase(TatorTransactionTest):
         sect_ids_str = ",".join([str(i) for i in sections])
         url = f"/rest/Localizations/{self.project.pk}?multi_section={sect_ids_str}"
         response = self.client.get(url, format="json")
+        response = collect_streaming_content(response)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 50)
 
     def test_multi_section_lookup(self):
