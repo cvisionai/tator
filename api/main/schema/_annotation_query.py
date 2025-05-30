@@ -29,6 +29,20 @@ annotation_filter_parameter_schema = [
         "description": "Unique integer identifying a media section.",
         "schema": {"type": "integer"},
     },
+        {
+        "name": "multi_section",
+        "in": "query",
+        "required": False,
+        "description": "List of integers identifying sections to select.",
+        "explode": False,
+        "schema": {
+            "type": "array",
+            "items": {
+                "type": "integer",
+                "minimum": 1,
+            },
+        },
+    },
     {
         "name": "type",
         "in": "query",
