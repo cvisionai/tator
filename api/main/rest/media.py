@@ -841,6 +841,8 @@ class MediaDetailAPI(BaseDetailView):
     schema = MediaDetailSchema()
     lookup_field = "id"
     http_method_names = ["get", "patch", "delete"]
+    _viewables = None
+
 
     def get_permissions(self):
         """Require transfer permissions for POST, edit otherwise."""
@@ -1079,4 +1081,7 @@ class MediaDetailAPI(BaseDetailView):
         return {"message": f'Media {params["id"]} successfully deleted!'}
 
     def get_queryset(self, **kwargs):
-        return self.filter_only_viewables(Media.objects.filter(pk=self.params["id"], deleted=False))
+        if type(self._viewables) != type(None):
+            return self._viewables
+        self._viewables = self.filter_only_viewables(Media.objects.filter(pk=self.params["id"], deleted=False))
+        return self._viewables
