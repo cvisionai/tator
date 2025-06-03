@@ -283,6 +283,7 @@ export class EntityTimeline extends BaseTimeline {
           else if (attrType.dtype == "float" || attrType.dtype == "int") {
             var color = "#FFFFFF";
             var visible = true;
+            var flipped = false;
             for (const info of this._frameNumericalTypes) {
               if (
                 info.name == attrType.name &&
@@ -297,6 +298,11 @@ export class EntityTimeline extends BaseTimeline {
               continue;
             }
 
+            if (attrType.style.indexOf("invert-timeline-y-axis") != -1)
+            {
+              flipped = true;
+            }
+
             // Display this attribute as a numerical graph.
             // Normalize the data because the graph domain is from 0 to 1.
             let graphData = [];
@@ -305,6 +311,10 @@ export class EntityTimeline extends BaseTimeline {
             for (let data of allData) {
               let value = data.attributes[attrType.name];
               if (!isNaN(value)) {
+                if (flipped)
+                {
+                  value *= -1;
+                }
                 if (value > maxValue) {
                   maxValue = value;
                 }
