@@ -305,7 +305,7 @@ export class EntityTimeline extends BaseTimeline {
               continue;
             }
 
-            if (attrType.style.indexOf("invert-timeline-y-axis") != -1)
+            if (attrType.style && attrType.style.indexOf("invert-timeline-y-axis") != -1)
             {
               flipped = true;
             }
